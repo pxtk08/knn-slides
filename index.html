@@ -1,0 +1,576 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>KNN thuyết trình</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F5F6FA;--panel:#FFFFFF;--ink:#0F172A;--mute:#586277;--line:#E1E6F0;--rule:#BFC8DA;--blue:#3566F0;--orange:#EE6A10;--red:#DC3158;--glow1:rgba(238,106,16,.15);--glow2:rgba(53,102,240,.16);--sh:0 22px 50px -26px rgba(15,23,42,.38);--font:"Be Vietnam Pro",system-ui,"Segoe UI",Roboto,Arial,sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace;box-sizing:border-box}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A0F1E;--panel:#111A30;--ink:#EDF1FA;--mute:#98A4BD;--line:#24304D;--rule:#3B4B6F;--blue:#7BA3FF;--orange:#FFA05A;--red:#FF6E8E;--glow1:rgba(255,160,90,.13);--glow2:rgba(123,163,255,.17);--sh:0 24px 60px -26px rgba(0,0,0,.75)}}
+:root[data-theme="dark"]{--bg:#0A0F1E;--panel:#111A30;--ink:#EDF1FA;--mute:#98A4BD;--line:#24304D;--rule:#3B4B6F;--blue:#7BA3FF;--orange:#FFA05A;--red:#FF6E8E;--glow1:rgba(255,160,90,.13);--glow2:rgba(123,163,255,.17);--sh:0 24px 60px -26px rgba(0,0,0,.75)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{color:var(--ink);font-family:var(--font);overflow:hidden;background:radial-gradient(60vw 50vh at 6% -8%,var(--glow1),transparent 70%),radial-gradient(55vw 50vh at 100% 104%,var(--glow2),transparent 70%),var(--bg)}
+body::after{content:"";position:fixed;left:0;top:env(safe-area-inset-top,0px);height:3px;width:100%;transform:scaleX(var(--p,0));transform-origin:left;background:linear-gradient(90deg,var(--orange),var(--blue),var(--red));transition:transform .5s cubic-bezier(.2,.8,.2,1);z-index:5}
+.slide{display:none;position:absolute;inset:0 0 calc(82px + env(safe-area-inset-bottom,0px)) 0;padding:calc(8vh + env(safe-area-inset-top,0px)) 6vw 2vh;align-items:center;gap:4vw;overflow:hidden}
+.slide.on{display:flex}
+.slide.col{flex-direction:column;align-items:flex-start;justify-content:center;gap:3.2vh}
+.txt{flex:1;min-width:0}
+.eb{position:absolute;top:calc(3vh + env(safe-area-inset-top,0px));left:6vw;display:inline-flex;align-items:center;gap:.6em;padding:.45em .95em;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--panel) 78%,transparent);backdrop-filter:blur(8px);font-size:clamp(11px,1.15vw,15px);font-weight:600;color:var(--mute);letter-spacing:.02em}
+.eb::before{content:"";width:.6em;height:.6em;border-radius:50%;background:var(--sc)}
+h1,h2{margin:0 0 3vh;line-height:1.1;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+h2{font-size:clamp(28px,4.2vw,58px)}
+h1{font-size:clamp(36px,5.8vw,82px);max-width:13ch;background:linear-gradient(100deg,var(--ink) 38%,var(--blue) 78%,var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{font-size:clamp(16px,2vw,27px);color:var(--mute);max-width:32ch;line-height:1.45;margin:0}
+.go{display:inline-flex;align-items:center;color:var(--mute);font-size:clamp(12px,1.4vw,17px);margin:5vh 0 0;padding:.6em 1.1em;border:1px solid var(--line);border-radius:999px;background:var(--panel);box-shadow:var(--sh)}
+ul{margin:0;padding:0;list-style:none;display:grid;gap:2vh}
+li{font-size:clamp(16px,2vw,27px);line-height:1.5;padding-left:1.6em;position:relative;max-width:44ch}
+li::before{content:"";position:absolute;left:.1em;top:.62em;width:.5em;height:.5em;border-radius:50%;background:var(--sc,var(--ink));box-shadow:0 0 0 .22em color-mix(in srgb,var(--sc,var(--ink)) 18%,transparent)}
+sub,sup{line-height:0}
+code{font-family:var(--mono);font-size:.84em;background:color-mix(in srgb,var(--blue) 9%,var(--panel));border:1px solid color-mix(in srgb,var(--blue) 24%,var(--line));border-radius:8px;padding:.1em .45em;white-space:normal}
+.figs{flex:0 0 min(38vw,54vh);display:flex;flex-direction:column;gap:1.6vh}
+.figs.two{flex-basis:min(52vw,62vh)}
+.figs.hero{flex-basis:min(44vw,66vh)}
+.figs.play{flex-basis:min(46vw,66vh)}
+.row{display:flex;gap:1.5vw}
+.fig{flex:1;min-width:0}
+.fig svg{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh)}
+.fig p,.tbl p{font-size:clamp(12px,1.35vw,17px);color:var(--mute);margin:1.8vh 0 0;line-height:1.45}
+.fig p{border-left:3px solid var(--sc);padding-left:.9em}
+.fig p b{color:var(--ink)}
+.leg{display:flex;flex-wrap:wrap;gap:.5em .6em;font-size:clamp(11px,1.25vw,16px);color:var(--mute)}
+.leg span{padding:.3em .85em;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+.leg i{font-style:normal}
+.ring{transform-box:fill-box;transform-origin:center;animation:grow .9s .35s cubic-bezier(.2,.8,.2,1) both}
+.ln{stroke-dasharray:1;animation:draw .7s .95s both}
+@keyframes grow{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes draw{from{stroke-dashoffset:1;opacity:0}to{stroke-dashoffset:0;opacity:.75}}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}}
+.slide.on>*,.slide.on :is(li,.rw,.stp,.mrow){animation:rise .65s cubic-bezier(.2,.8,.2,1) both}
+.slide.on>:nth-child(2),.slide.on :is(li,.rw,.stp,.mrow):nth-child(2){animation-delay:.1s}
+.slide.on>:nth-child(3),.slide.on :is(li,.rw,.stp,.mrow):nth-child(3){animation-delay:.2s}
+.slide.on :is(li,.rw):nth-child(4){animation-delay:.3s}
+.slide.on :is(li,.rw):nth-child(5){animation-delay:.4s}
+.pt.nb{stroke:var(--ink);stroke-width:.9}
+.pgsvg{touch-action:none;cursor:grab}
+.pgsvg:active{cursor:grabbing}
+.ctl{display:flex;align-items:center;gap:1.2vw;font-size:clamp(14px,1.7vw,22px);padding:1.4vh 1.4vw;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh)}
+.ctl input{flex:1;accent-color:var(--blue);min-width:0}
+.ctl b{display:inline-block;min-width:1.8em;text-align:center;padding:.05em .4em;border-radius:8px;background:var(--blue);color:var(--bg)}
+.tbl{flex:0 1 auto;max-width:52vw;min-width:0;overflow:auto;padding:4px 4px 26px}
+table{border-collapse:separate;border-spacing:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--sh);font-size:clamp(12px,1.5vw,20px)}
+th,td{border-bottom:1px solid var(--line);padding:.7em 1.05em;text-align:left;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+th{font-size:.76em;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);background:color-mix(in srgb,var(--ink) 4%,var(--panel))}
+tr.hl td{background:color-mix(in srgb,var(--blue) 12%,var(--panel))}
+tr.hl td:first-child{box-shadow:inset 4px 0 var(--blue)}
+pre.code{flex:0 1 auto;max-width:52vw;min-width:0;overflow:auto;margin:0;background:#0C1326;color:#DCE6FF;border:1px solid #243050;border-radius:18px;box-shadow:var(--sh);padding:2.4vh 1.8vw 2.8vh;font-family:var(--mono);font-size:clamp(12px,1.4vw,19px);line-height:1.65}
+pre.code::before{content:"";display:block;width:.7em;height:.7em;border-radius:50%;background:#FF5F57;box-shadow:1.2em 0 #FEBC2E,2.4em 0 #28C840;margin-bottom:2vh}
+pre.code i{font-style:normal}.k{color:#C792EA}.f{color:#82AAFF}.n{color:#F78C6C}
+.head{flex:0 0 30%}
+.head h2{margin-bottom:2vh}
+.rows{flex:1;min-width:0;display:grid;gap:1.5vh;counter-reset:r}
+.rw{display:flex;gap:1.2vw;align-items:baseline;padding:2vh 1.6vw;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--ac,var(--blue));border-radius:16px;box-shadow:var(--sh);font-size:clamp(15px,2vw,27px);line-height:1.4}
+.rw::before{counter-increment:r;content:counter(r,decimal-leading-zero);flex:none;font-family:var(--mono);font-weight:500;font-size:.62em;color:var(--ac,var(--blue))}
+.rw:has(.gl)::before{display:none}
+.gl{flex:none;width:1.3em;font-weight:800;color:var(--ac,var(--blue))}
+.steps{--nd:clamp(44px,5.2vw,74px);display:grid;grid-template-columns:repeat(3,1fr);gap:3vw;width:100%}
+.stp{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:2.8vh 1.8vw 3.2vh;box-shadow:var(--sh)}
+.stp:not(:last-child)::after{content:"→";position:absolute;right:-2.3vw;top:calc(2.8vh + var(--nd)/2);transform:translate(50%,-50%);color:var(--mute);font-size:clamp(18px,2.2vw,30px)}
+.nd{width:var(--nd);height:var(--nd);border-radius:50%;background:var(--ac);color:var(--bg);display:grid;place-items:center;font-size:calc(var(--nd)*.5);font-weight:800;margin-bottom:2.4vh;box-shadow:0 0 0 .22em color-mix(in srgb,var(--ac) 22%,transparent)}
+.stp b{display:block;font-size:clamp(18px,2.3vw,32px);line-height:1.2;margin-bottom:.8vh}
+.steps.plain .stp{display:flex;flex-direction:column;align-items:center;text-align:center;padding:3.4vh 1.6vw 3.8vh}.steps.plain .stp b{display:flex;align-items:center;justify-content:center;min-height:2.5em;margin:0;text-align:center}.stp span{display:block;color:var(--mute);font-size:clamp(14px,1.6vw,22px);line-height:1.45}
+.map{display:grid;gap:2.6vh;width:100%}
+.mrow{display:grid;grid-template-columns:1fr auto 1fr;gap:2vw;align-items:center}
+.chip{padding:2.8vh 1.8vw;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:var(--sh);font-size:clamp(17px,2.3vw,32px);font-weight:600}
+.chip.a{border-left:8px solid var(--orange)}
+.chip.b{border-left:8px solid var(--blue)}
+.mrow i{display:grid;place-items:center;width:2.1em;height:2.1em;border-radius:50%;background:var(--panel);border:1px solid var(--line);font-style:normal;color:var(--mute);font-size:clamp(16px,2vw,28px)}
+.note{margin:0;color:var(--mute);font-size:clamp(14px,1.6vw,22px);padding:1.3vh 1.3vw;border-left:3px solid var(--sc);background:color-mix(in srgb,var(--sc) 8%,transparent);border-radius:0 12px 12px 0;max-width:62ch}
+.note b{color:var(--ink)}
+.bar{position:fixed;left:3vw;right:3vw;bottom:calc(12px + env(safe-area-inset-bottom,0px));height:56px;display:flex;align-items:center;justify-content:space-between;gap:2vw;padding:0 10px;border:1px solid var(--line);border-radius:18px;background:color-mix(in srgb,var(--panel) 74%,transparent);backdrop-filter:blur(14px);box-shadow:var(--sh);color:var(--mute);font-size:14px}
+.bar button.nav{font:inherit;font-weight:600;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 18px;cursor:pointer;transition:border-color .2s,transform .2s}
+.bar button.nav:hover{border-color:var(--blue);transform:translateY(-1px)}
+#prev::before{content:"←";margin-right:.5em}#next::after{content:"→";margin-left:.5em}
+.bar button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.mid{flex:1;display:flex;align-items:center;gap:2vw;min-width:0;justify-content:center}
+.pn{flex:0 0 auto;min-width:16ch;text-align:right;white-space:nowrap}
+.axis{position:relative;display:flex;align-items:center;justify-content:space-between;flex:1;max-width:620px}
+.axis::before{content:"";position:absolute;left:8px;right:8px;top:50%;height:2px;margin-top:-1px;border-radius:2px;background:var(--rule)}
+.tk{width:20px;height:30px;padding:0;border:0;background:none;position:relative;cursor:pointer}
+.tk::before{content:"";position:absolute;left:50%;top:50%;width:10px;height:10px;transform:translate(-50%,-50%);border:2px solid var(--c);border-radius:50%;background:var(--panel);transition:transform .2s}
+.tk:hover::before{transform:translate(-50%,-50%) scale(1.25)}
+.tk.past::before{background:var(--c)}
+.tk.cur::before{width:16px;height:16px;border:3px solid var(--panel);background:var(--red);box-shadow:0 0 0 2px var(--red)}
+.pc{flex:0 0 auto;min-width:6ch;text-align:left;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+@media (max-width:760px){.slide.on{flex-direction:column;align-items:flex-start;overflow:auto;gap:2vh}.figs,.figs.two,.figs.hero,.figs.play{flex:none;width:min(84vw,50vh)}.figs.two{width:92vw}.tbl,pre.code{max-width:100%}.head{flex:none}.steps{grid-template-columns:1fr}.stp::after{display:none}.mrow{grid-template-columns:1fr}.mrow i{display:none}.pn,.axis{display:none}.mid{justify-content:center}}
+@media (prefers-reduced-motion:reduce){.ring,.ln,.slide.on>*,.slide.on :is(li,.rw,.stp,.mrow){animation:none}body::after{transition:none}}
+@media print{body{overflow:visible}.slide{display:flex!important;position:relative;page-break-after:always;min-height:100vh}.bar{display:none}}
+.ml{margin:3.2vh 0 0;max-width:54ch;font-size:clamp(13px,1.45vw,19px);line-height:1.55;color:var(--ink);padding:1.4vh 1.3vw;border-left:3px solid var(--sc);background:color-mix(in srgb,var(--sc) 8%,transparent);border-radius:0 12px 12px 0}
+.ml b{display:block;margin-bottom:.4em;font-size:1.08em}
+.ml em{font-style:normal;color:var(--mute)}
+.ml+.go{margin-top:2.6vh}
+.slide.pl{flex-direction:column;justify-content:center;align-items:center;gap:1.8vh}
+.slide.pl h2{margin:0;text-align:center;max-width:none}
+.slide.pl .figs.play{flex:0 1 auto;width:min(60vw,50vh)}
+@media (max-width:760px){.slide.pl{align-items:flex-start}.slide.pl h2{text-align:left}.slide.pl .figs.play{width:min(84vw,50vh)}}
+.pyg{display:grid;grid-template-columns:1.25fr 1fr;grid-template-rows:auto minmax(0,1fr);gap:2vh 1.6vw;width:100%;flex:1;min-height:0}
+.cell{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh);padding:1.6vh 1.2vw;display:flex;flex-direction:column;gap:1vh;min-width:0;min-height:0}
+.cd{grid-row:1/3}
+.lb{font-size:clamp(11px,1.1vw,14px);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+#pycode{flex:1;min-height:0;width:100%;resize:none;border:0;border-radius:12px;background:#0C1326;color:#DCE6FF;font-family:var(--mono);font-size:clamp(11px,1.1vw,15px);line-height:1.6;padding:1.4vh 1vw;white-space:pre;overflow:auto}
+.fld{display:grid;grid-template-columns:repeat(2,1fr);gap:.8vh .8vw}
+.fld label{display:grid;gap:.3em;font-size:clamp(11px,1.15vw,15px);color:var(--mute)}
+.fld input{font:inherit;font-size:clamp(13px,1.4vw,18px);padding:.35em .6em;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);min-width:0}
+.runb{font:inherit;font-weight:700;color:var(--bg);background:var(--blue);border:0;border-radius:12px;padding:1.1vh 1.4vw;font-size:clamp(13px,1.5vw,20px);cursor:pointer}
+.runb:disabled{opacity:.55;cursor:wait}
+#pyout{margin:0;flex:1;min-height:0;white-space:pre-wrap;overflow:auto;font-family:var(--mono);font-size:clamp(11px,1.15vw,15px);line-height:1.6}
+@media (max-width:760px){.pyg{grid-template-columns:1fr;grid-template-rows:none}.cd{grid-row:auto}#pycode{min-height:40vh}}
+
+.cvt h2{margin-bottom:1.6vh}
+.defs{display:grid;grid-template-columns:1fr 1fr;gap:1vw;margin-bottom:1.8vh}
+.df{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--ac);border-radius:14px;box-shadow:var(--sh);padding:1.2vh 1vw;font-size:clamp(12px,1.3vw,18px);line-height:1.4;color:var(--mute)}
+.df b{display:block;color:var(--ink);margin-bottom:.25em;font-size:1.05em}
+.df span b{display:inline;color:var(--ink);font-size:1em;margin:0}
+.cvb{gap:1vh;margin-bottom:1.8vh}
+.defs:empty{display:none}
+.cvb{gap:2.4vh}
+.cvb li{font-size:clamp(16px,2vw,27px);line-height:1.4;max-width:none}
+.slide.cv2{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:1.6vh}
+.slide.cv2 h2{margin:0}
+.cv2row{display:flex;gap:3vw;align-items:flex-start;justify-content:center;width:100%}
+.cv2a{flex:0 0 min(28vw,40vh)}
+.cv2b{flex:0 0 min(56vw,80vh)}
+.cv2li{grid-template-columns:repeat(3,1fr);gap:1.6vw}
+.cv2li li{font-size:clamp(12px,1.4vw,20px);max-width:none;line-height:1.4}
+.cv2 .fig p{margin-top:1vh;font-size:clamp(11px,1.2vw,16px)}
+@media (max-width:760px){.cv2row{flex-direction:column}.cv2a,.cv2b{flex:none;width:min(84vw,50vh)}.cv2b{width:92vw}.cv2li{grid-template-columns:1fr}}
+.cvt .note{font-size:clamp(13px,1.5vw,21px);max-width:none;margin-top:3vh}
+.figs.cvf{flex-basis:min(40vw,56vh)}
+@media (max-width:760px){.defs{grid-template-columns:1fr}.figs.cvf{flex:none;width:min(84vw,50vh)}}
+.tm{flex:1;display:flex;justify-content:space-between;align-items:baseline;gap:2vw;flex-wrap:wrap}
+.tm span{font-family:var(--mono);font-size:.68em;color:var(--mute)}
+.tcg{display:grid;grid-template-columns:1fr 1.2fr;gap:2vw;width:100%}
+.tcc{background:var(--panel);border:1px solid var(--line);border-top:5px solid var(--ac);border-radius:20px;box-shadow:var(--sh);padding:2.2vh 1.6vw 2.4vh}
+.tcc small{display:block;font-weight:700;font-size:clamp(11px,1.2vw,16px);letter-spacing:.08em;text-transform:uppercase;color:var(--ac);margin-bottom:.6vh}
+.tcc h3{margin:0 0 1.4vh;font-size:clamp(17px,2.1vw,29px);line-height:1.2}
+.ti{display:flex;gap:.9em;align-items:baseline;font-size:clamp(13px,1.5vw,20px);line-height:1.4;padding:.8vh 0;border-top:1px dashed var(--line)}
+.ti i{font-style:normal;font-family:var(--mono);font-size:.8em;color:var(--ac);flex:none;min-width:2.4em}
+@media (max-width:760px){.tcg{grid-template-columns:1fr}}
+
+/* slide đầu: thông tin môn học + bảng nhóm */
+.tl{flex:0 0 36%;display:grid;gap:3vh;align-content:center}
+.tlf{border-left:4px solid var(--blue);padding-left:1.1vw}
+.tlf small{display:block;font-weight:700;font-size:clamp(10px,1.1vw,14px);letter-spacing:.09em;text-transform:uppercase;color:var(--mute);margin-bottom:.5vh}
+.tlf b{font-size:clamp(17px,2.1vw,30px);line-height:1.3;font-weight:800;color:var(--ink);text-wrap:balance}
+.tlf:nth-child(2){border-left-color:var(--orange)}
+.tlf:nth-child(3){border-left-color:var(--red)}
+.tl .go{margin:1vh 0 0;justify-self:start}
+.tp{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);border-top:5px solid var(--orange);border-radius:20px;box-shadow:var(--sh);padding:2.4vh 1.6vw 2.2vh}
+.tph{display:flex;justify-content:space-between;align-items:baseline;gap:1vw;margin-bottom:1.6vh}
+.tph h2{margin:0;font-size:clamp(22px,3vw,42px)}
+.tph span{font-size:clamp(11px,1.2vw,16px);color:var(--mute)}
+.tpc,.tpr{display:grid;grid-template-columns:3em 1fr auto;gap:1vw;align-items:center}
+.tpc{font-weight:700;font-size:clamp(10px,1.1vw,14px);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);padding:0 .4vw 1vh;border-bottom:2px solid var(--rule)}
+.tpr{padding:1.6vh .4vw;border-bottom:1px dashed var(--line)}
+.tpr:last-child{border-bottom:0}
+.tpr i{font-style:normal;font-family:var(--mono);font-size:clamp(12px,1.3vw,18px);color:var(--mute)}
+.tpr b{font-size:clamp(17px,2.3vw,32px);font-weight:800;letter-spacing:-.01em;color:var(--ink)}
+.tpr span{font-family:var(--mono);font-size:clamp(13px,1.6vw,22px);font-weight:600;letter-spacing:.04em;color:var(--orange);background:color-mix(in srgb,var(--orange) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--orange) 40%,var(--line));border-radius:999px;padding:.2em .8em;white-space:nowrap}
+@media (max-width:760px){.tl{flex:none}.tp{width:100%}}
+/* slide Cross-Validation */
+/* slide 17: đẩy nội dung xuống, căn giữa theo chiều dọc */
+.slide.cv2{justify-content:flex-start;gap:0;padding-top:calc(12vh + env(safe-area-inset-top,0px))}
+.slide.cv2 h2{margin:auto 0 2.4vh}
+.slide.cv2 .cv2row{margin-bottom:2.6vh}
+.slide.cv2 .cv2li{margin-bottom:auto}
+.cv2a{flex:0 0 min(26vw,34vh)}
+.cv2b{flex:0 0 min(52vw,68vh)}
+@media (max-width:760px){.cv2a,.cv2b{flex:none;width:min(84vw,50vh)}.cv2b{width:92vw}}
+</style>
+<main id="deck"></main>
+<div class="bar"><button class="nav" id="prev">Trước</button><div class="mid"><span class="pn" id="pn"></span><nav class="axis" id="axis" aria-label="Trục slide"></nav><span class="pc" id="num"></span></div><button class="nav" id="next">Sau</button></div>
+<script>
+const P0="Mở đầu",P1="Phần 1: Ví dụ trực quan",P2="Phần 2: Khái niệm và cơ chế",P3="Tổng kết";
+const PC={};PC[P0]="var(--mute)";PC[P1]="var(--orange)";PC[P2]="var(--blue)";PC[P3]="var(--red)";
+const L1='<div class="leg"><span><i style="color:var(--orange)">●</i> Nhóm cam</span><span><i style="color:var(--blue)">■</i> Nhóm xanh</span><span><i style="color:var(--red)">▲</i> Điểm mới</span></div>';
+const L2='<div class="leg"><span><i style="color:var(--orange)">●</i> Nhóm cam</span><span><i style="color:var(--blue)">■</i> Nhóm xanh</span><span>Màu nền: nhãn KNN dự đoán tại vùng đó</span></div>';
+const S=[
+{p:P0,t:"Nhóm thực hiện",lay:"team",sub:"KNN, từ trực quan đến cơ chế",course:"Chuyên đề giới thiệu chuyên ngành An toàn thông tin",teacher:"Nguyễn Việt Nhật",b:[["Phạm Xuân Tường Khoa","1240171"],["Trần Đăng Khôi","1240271"],["Trần Nam Khánh","1240071"],["Phùng Văn Khánh","0043471"],["Nguyễn Đức Khánh","1239971"]]},
+{p:P0,t:"Mục lục",lay:"toc",parts:[{n:1,k:"Phần 1",t:"Ví dụ trực quan",c:"var(--orange)",i:["Machine Learning là gì?","KNN “học bài” như thế nào: ví dụ chọn phim","Ví dụ hình học: K = 1 và K = 3","Tự thử: kéo điểm, đổi K"]},{n:2,k:"Phần 2",t:"Khái niệm và cơ chế",c:"var(--blue)",i:["Định nghĩa và ba bước cốt lõi","Bước 1: đo khoảng cách (Euclidean, Manhattan, Minkowski)","Bước 2: chọn K (overfitting, underfitting, cross-validation)","Bước 3: phân loại, hồi quy, trọng số theo khoảng cách","Chuẩn hóa dữ liệu","Ví dụ trọn vẹn: phân loại trái cây, code Python, scikit-learn","Ưu điểm, nhược điểm, ứng dụng"]}],note:"Cuối bài: 3 ý cần nhớ và hỏi đáp"},
+{k:1,p:P1,t:"KNN: từ trực quan đến cơ chế",s:"K-Nearest Neighbors, một thuật toán đơn giản của Machine Learning",ml:"<b>Machine Learning là gì?</b>Thay vì lập trình sẵn từng quy tắc, ta đưa cho máy tính thật nhiều ví dụ đã có đáp án. Máy tự rút ra quy luật từ các ví dụ đó, rồi dùng quy luật ấy để dự đoán trường hợp mới.<br><em>Ví dụ: cho máy xem hàng nghìn email đã gắn nhãn “thư rác” hoặc “bình thường”, nó tự học cách lọc email mới.</em>"},
+{p:P1,t:"KNN “học bài” như thế nào?",lay:"map",b:[["Bạn cần biết một phim mới hay hay dở","Điểm mới cần dự đoán"],["Bạn bè đã xem phim cũ và chấm điểm","Dữ liệu huấn luyện (đã có đáp án)"],["Bạn không tự rút ra “công thức phim hay”","KNN không học quy luật từ trước"]],note:"Ví dụ: <b>hỏi bạn bè có gu giống mình</b> để chọn phim. Bạn chỉ giữ sẵn danh sách bạn bè và điểm họ chấm."},
+{p:P1,t:"Chọn phim bằng KNN",lay:"steps",b:[["Có một phim mới","Điểm cần dự đoán: phim này hay hay dở?"],["Tìm K người bạn giống gu mình nhất","K điểm gần nhất trong dữ liệu"],["Hỏi họ, rồi theo số đông","Bỏ phiếu: đa số nói hay thì đoán hay"]],note:"Bạn không học trước gì cả, có phim mới mới đi hỏi. Cách làm này gọi là <b>lazy learning</b>: chỉ lưu dữ liệu, việc nặng hoãn đến lúc cần dự đoán."},
+{p:P1,t:"Ví dụ hình học",b:["Hệ trục tọa độ: nhóm tròn cam, nhóm vuông xanh","Điểm mới (tam giác đỏ) nằm giữa cụm xanh, nhưng ngay cạnh nó có một điểm cam lạc sang","Nên xếp điểm mới vào nhóm nào?"],fs:[{K:0,c:"Điểm mới nằm trong cụm xanh, kề một điểm cam lạc"}],leg:1},
+{p:P1,t:"K = 1",b:["Chỉ xét 1 điểm gần nhất: đó là điểm cam bị lạc sang vùng xanh","Dự đoán: cam. Sai, vì điểm đó là nhiễu (outlier): một điểm bất thường, không đại diện cho nhóm"],fs:[{K:1,c:"K = 1: láng giềng gần nhất là điểm cam lạc, dự đoán cam"}],leg:1},
+{p:P1,t:"K = 3",b:["Xét 3 điểm gần nhất: 2 xanh, 1 cam (điểm lạc)","Phiếu xanh thắng, nên tam giác thuộc nhóm xanh","Một điểm nhiễu không còn quyết định được kết quả"],fs:[{K:3,c:"K = 3: 2 xanh thắng 1 cam"}],leg:1},
+{p:P1,t:"Tự thử: kéo điểm, đổi K",lay:"play"},
+{p:P2,t:"Định nghĩa",lay:"rows",b:["<b>Supervised learning</b>: học từ các ví dụ đã có sẵn đáp án (nhãn), như ảnh đã ghi “cam” hoặc “táo”","<b>Lazy learning</b>: chỉ cất dữ liệu, có câu hỏi mới thì mới đi tìm đáp án","<b>Non-parametric</b>: không áp sẵn công thức nào lên dữ liệu, cứ nhìn thẳng vào các điểm có sẵn","<b>Hai bài toán</b>: phân loại và hồi quy"]},
+{p:P2,t:"Ba bước cốt lõi",lay:"steps",plain:1,b:[["Tính khoảng cách",""],["Chọn K điểm gần nhất",""],["Ra quyết định",""]]},
+{p:P2,t:"Bước 1: khoảng cách Euclidean",b:["Khoảng cách đường thẳng giữa hai điểm (x<sub>1</sub>, y<sub>1</sub>) và (x<sub>2</sub>, y<sub>2</sub>)","<code>d = √( (x<sub>1</sub> − x<sub>2</sub>)<sup>2</sup> + (y<sub>1</sub> − y<sub>2</sub>)<sup>2</sup> )</code>"] ,fs:[{t:"e",c:"d là cạnh huyền: d² = (lệch x)² + (lệch y)²"}]},
+{p:P2,t:"Các cách đo khác",b:["Manhattan:<br><code style='white-space:nowrap;font-size:.74em'>d = |x<sub>1</sub> − x<sub>2</sub>| + |y<sub>1</sub> − y<sub>2</sub>|</code>","Minkowski:<br><code style='white-space:nowrap;font-size:.74em'>d = ( |x<sub>1</sub> − x<sub>2</sub>|<sup>p</sup> + |y<sub>1</sub> − y<sub>2</sub>|<sup>p</sup> )<sup>1/p</sup></code>","Dấu | | là trị tuyệt đối: bỏ dấu âm, chỉ lấy độ lớn","p = 1 ra Manhattan, p = 2 ra Euclidean"],fs:[{t:"d",c:"Từ A đến B: Euclidean (đường thẳng) và Manhattan (đi theo lưới)"}]},
+{p:P2,t:"Ví dụ tính tay",b:["Điểm mới Q = (4, 4); có 5 training point: A, B, C, D, E","Tính khoảng cách từ Q đến từng training point rồi xếp tăng dần","K = 3: cam, cam, xanh nên Q là <b>cam</b>","K = 5: 2 cam, 3 xanh nên Q là <b>xanh</b>"],tb:{h:["Training point","(x, y)","Nhãn","Phép tính","d(Q, training point)"],r:[["B","(3, 5)","Cam","√(1² + 1²)","1,41"],["A","(2, 3)","Cam","√(2² + 1²)","2,24"],["C","(6, 6)","Xanh","√(2² + 2²)","2,83"],["D","(7, 4)","Xanh","√(3² + 0²)","3,00"],["E","(5, 1)","Xanh","√(1² + 3²)","3,16"]],hl:3,c:"Hàng tô nền: 3 láng giềng gần nhất (K = 3)"}},
+{p:P2,t:"Bước 2: chọn K",lay:"rows",b:["K là số láng giềng, tham số <code>n_neighbors</code>","Phân loại nhị phân: chọn K lẻ để tránh hòa phiếu","Mẹo khởi đầu: thử K ≈ √N (N là số training point)","Chốt K bằng kiểm định chéo (cross-validation)"]},
+{p:P2,t:"Chọn K sai thì sao?",b:["K quá nhỏ (K = 1): ranh giới quá phức tạp, ôm sát cả điểm nhiễu, dễ <b>overfitting</b>: nhớ thuộc dữ liệu mẫu nên dự đoán kém trên dữ liệu mới","K quá lớn (K = 25 trên 60 điểm): ranh giới quá trơn, bỏ sót cấu trúc thật của dữ liệu, dễ <b>underfitting</b>: mô hình quá đơn giản để nắm được quy luật","K “tốt” phụ thuộc từng bộ dữ liệu"],lay:"bnd"},
+{p:P2,t:"Chọn K và Cross-Validation",lay:"cv2",b:["<b style=\"color:var(--orange)\">Đường cam</b>: chấm trên bài đã học. Điểm cao là chuyện thường","<b style=\"color:var(--blue)\">Đường xanh</b>: chấm trên đề mới. Đây mới là thước đo thật","Chọn K ở <b>đáy đường xanh</b> (hình này: K ≈ 7)"],fs:[{t:"cv",c:"<b>Hình 1.</b> Cả hai đường đo tỉ lệ đoán sai: thấp hơn là tốt hơn"},{t:"fd",c:"<b>Hình 2.</b> Cách ra <b>một điểm</b> trên đường xanh (ví dụ K = 7): giấu lần lượt từng phần làm “đề thi”, rồi lấy trung bình"}]},
+{p:P2,t:"Bước 3: phân loại",b:["Bỏ phiếu đa số tương đối: chọn nhãn có nhiều phiếu nhất trong K điểm","Khác với đa số tuyệt đối (phải quá 50% phiếu mới thắng)","Hòa phiếu thì cần quy tắc phá hòa, ví dụ ưu tiên láng giềng gần nhất"],fs:[{t:"v",c:"3 lớp, K = 7, phiếu 3-2-2: lớp A thắng với 3/7 phiếu (chưa tới 50%)"}]},
+{p:P2,t:"Bước 3: hồi quy",b:["Dự đoán = trung bình giá trị của K láng giềng","Ví dụ: giá 3 căn nhà gần giống nhau là 2,0 / 2,2 / 2,4 tỷ thì dự đoán <b>2,2 tỷ</b>"],fs:[{t:"a",c:"Hồi quy: lấy trung bình thay cho bỏ phiếu"}]},
+{p:P2,t:"Trọng số theo khoảng cách",b:["Ngôi nhà có nhiều <b>loa cùng công suất</b>. Mỗi loa là một láng giềng, “hô” nhãn của mình (cam hoặc xanh). Bạn đứng trong phòng, nghe K = 3 loa gần nhất","<b>Đều nhau</b>: đếm số loa, mỗi loa một phiếu, bất kể loa ở gần hay xa","<b>Theo khoảng cách</b>: tính theo độ to bạn nghe thật. Loa càng gần càng to (≈ 1 chia khoảng cách), phiếu càng nặng"],fs:[{t:"w",c:"Ba loa cùng công suất: loa cam cách bạn 1 m, hai loa xanh cách 4 m"}]},
+{p:P2,t:"Chuẩn hóa dữ liệu",b:["Số đo thang lớn (lương) lấn át số đo thang nhỏ (tuổi)","Cách làm: đưa mọi số về khoảng từ 0 đến 1","Chỉ tính các thông số chuẩn hóa trên tập huấn luyện, rồi áp dụng nguyên xi cho tập kiểm tra"],fs:[{t:"s",c:"Chuẩn hóa đưa mọi đặc trưng về cùng một thang"}]},
+{p:P2,t:"Ví dụ chuẩn hóa",b:["Q = (30 tuổi, 20 triệu); tuổi trải 20–60, lương trải 5–200 triệu","A = (50 tuổi, 21 triệu): lệch Q 20 tuổi, 1 triệu","B = (31 tuổi, 50 triệu): lệch Q 1 tuổi, 30 triệu","Số gốc: A gần Q hơn. Sau chuẩn hóa: B gần Q hơn"],tb:{h:["Điểm","Tuổi","Lương (triệu)","Khoảng cách gốc","Sau chuẩn hóa"],r:[["Q","30","20","—","—"],["A","50","21","20,0","0,50"],["B","31","50","30,0","0,16"]],c:"Cùng dữ liệu, chỉ khác thang đo, láng giềng gần nhất đổi từ A sang B: thang đo quyết định ai là láng giềng"}},
+{p:P2,t:"Quả này là loại nào?",b:["Mỗi quả có 2 số đo: cân nặng (g) và độ sần vỏ (1 đến 10)","Quýt nhẹ; cam và táo nặng, nhưng cam sần hơn táo","Quả mới nặng 195 g, sần 7: nằm giữa cụm cam, nhưng sát một quả táo lạ","Nên xếp quả mới vào loại nào?"],fs:[{t:"fr",c:"18 quả đã biết loại, cùng quả mới cần đoán (tam giác đỏ)"}],leg:3},
+{p:P2,t:"Trước khi chạy: dữ liệu đi qua đâu?",b:["Quả mới đi qua 3 bước: tính khoảng cách, chọn K gần nhất, bỏ phiếu","Không có bước huấn luyện: mọi tính toán diễn ra lúc dự đoán","Loại quả nào nhiều phiếu nhất trong K láng giềng thì thắng","Ở slide sau, bạn tự đổi cân nặng, độ sần và K"],fs:[{t:"pl",c:"Luồng dữ liệu của đoạn code ở slide kế tiếp"}]},
+{p:P2,t:"Thử KNN ngay trên slide",lay:"py"},
+{p:P2,t:"Ngoài thực tế: gọi scikit-learn",b:["Ba bước vừa viết tay đã có sẵn trong thư viện, ngắn và nhanh hơn nhiều","Pipeline gộp chuẩn hóa và KNN thành một mô hình","<code>fit</code> chỉ lưu dữ liệu, <code>predict</code> mới đi tìm láng giềng"],code:['from sklearn.neighbors import KNeighborsClassifier','from sklearn.pipeline import make_pipeline','from sklearn.preprocessing import StandardScaler','','# mỗi quả: [cân nặng (g), độ sần (1-10)]','X = [[75, 4], [82, 5], [95, 5], [88, 6], [74, 6], [100, 7],','     [189, 8], [201, 8], [214, 8], [208, 7], [226, 7], [180, 4],','     [182, 2], [200, 1], [168, 2], [190, 3], [210, 2], [197, 6]]','y = ["quýt"] * 6 + ["cam"] * 6 + ["táo"] * 6','','model = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=3))','model.fit(X, y)','print(model.predict([[195, 7]]))'].join("\n")},
+{p:P2,t:"Tìm K bằng GridSearchCV",b:["Thử K = 1, 3, 5, 7 rồi chấm điểm bằng cross-validation 3 phần","<code>make_pipeline</code> tự đặt tên bước, nên tham số KNN có tiền tố <code>kneighborsclassifier__</code>","<code>best_params_</code> trả về K tốt nhất"],code:['from sklearn.model_selection import GridSearchCV','','grid = {"kneighborsclassifier__n_neighbors": [1, 3, 5, 7]}','search = GridSearchCV(model, grid, cv=3)','search.fit(X, y)','print(search.best_params_)'].join("\n")},
+{p:P2,t:"Ưu điểm",lay:"rows",ico:"✓",ac:"var(--blue)",b:["Gần như không có bước huấn luyện","Dễ hiểu, dễ cài đặt, dễ giải thích","Không giả định phân phối dữ liệu","Làm được cả phân loại lẫn hồi quy"]},
+{p:P2,t:"Nhược điểm",lay:"rows",ico:"!",ac:"var(--red)",b:["Tốn bộ nhớ: phải giữ toàn bộ dữ liệu","Dự đoán chậm: tìm vét cạn tốn O(N·d) mỗi truy vấn","Lời nguyền số chiều: nhiều chiều thì các điểm gần như cách đều nhau","Nhạy với thang đo và đặc trưng nhiễu","Kém khi dữ liệu mất cân bằng lớp"]},
+{p:P2,t:"Ứng dụng và hướng mở rộng",lay:"rows",b:["<b>Cơ bản:</b> nhận dạng chữ số (MNIST), phân loại hoa (Iris), gợi ý","<b>Tìm chính xác nhanh hơn:</b> K-D Tree, Ball Tree (số chiều thấp)","<b>Dữ liệu lớn:</b> ANN như HNSW, đổi chút sai số lấy tốc độ","<b>Cùng ý tưởng</b> “tìm láng giềng gần nhất” với vector search và RAG"]},
+{p:P3,t:"3 ý cần nhớ",lay:"rows",b:["KNN tìm K điểm gần nhất rồi <b>bỏ phiếu</b> (phân loại) hoặc <b>lấy trung bình</b> (hồi quy)","<b>K</b> và <b>cách đo khoảng cách</b> quyết định kết quả; chọn K bằng cross-validation","Luôn <b>chuẩn hóa</b> dữ liệu; cẩn thận khi dữ liệu lớn hoặc nhiều chiều"]},
+{p:P3,t:"Hỏi & đáp",lay:"rows",sub:"Tài liệu để đọc thêm",b:["Cover & Hart (1967). Nearest neighbor pattern classification. IEEE Trans. Information Theory","Hastie, Tibshirani, Friedman. The Elements of Statistical Learning, chương 13","Tài liệu scikit-learn: mục Nearest Neighbors (sklearn.neighbors)","Malkov & Yashunin. HNSW (IEEE TPAMI, 2020)"]}
+];
+/* ---- dữ liệu và hình minh họa ---- */
+const OR=[[42,58],[44,40],[25,35],[30,62],[35,20],[20,50],[77,50]],BL=[[70,42],[74,58],[78,40],[70,70],[84,55],[78,66],[66,60],[88,42],[66,40]],Q=[73,50];
+const AX='<g stroke="var(--rule)" stroke-width=".4"><path d="M10 90H92M10 90V8"/></g><text x="51" y="97.5" text-anchor="middle" font-size="3.6" fill="var(--mute)">Đặc trưng 1</text><text transform="translate(4.5 49) rotate(-90)" text-anchor="middle" font-size="3.6" fill="var(--mute)">Đặc trưng 2</text>';
+const so=(h,l)=>`<svg viewBox="0 0 100 ${h}" role="img" aria-label="${l}">`;
+function plot(K){
+  const P=[...OR.map(p=>({x:p[0],y:p[1],o:1})),...BL.map(p=>({x:p[0],y:p[1],o:0}))];
+  P.forEach(p=>p.d=Math.hypot(p.x-Q[0],p.y-Q[1]));
+  const sd=[...P].sort((a,b)=>a.d-b.d),near=new Set(sd.slice(0,K)),R=K?(sd[K-1].d+sd[K].d)/2:0;
+  let s=so(100,"Biểu đồ phân tán KNN")+AX;
+  if(K){
+    s+=`<circle class="ring" cx="${Q[0]}" cy="${Q[1]}" r="${R.toFixed(2)}" fill="none" stroke="var(--red)" stroke-width=".7" stroke-dasharray="2 1.5"/>`;
+    sd.slice(0,K).forEach(p=>s+=`<line class="ln" pathLength="1" x1="${Q[0]}" y1="${Q[1]}" x2="${p.x}" y2="${p.y}" stroke="var(--red)" stroke-width=".45"/>`);
+  }
+  P.forEach(p=>{const st=near.has(p)?' stroke="var(--ink)" stroke-width=".9"':'';
+    s+=p.o?`<circle cx="${p.x}" cy="${p.y}" r="2.6" fill="var(--orange)"${st}/>`:`<rect x="${p.x-2.4}" y="${p.y-2.4}" width="4.8" height="4.8" fill="var(--blue)"${st}/>`});
+  s+=`<text x="80.5" y="48.6" font-size="3.4" fill="var(--mute)">điểm lạc</text>`;
+  s+=`<path d="M${Q[0]} ${Q[1]-3.6}L${Q[0]+3.4} ${Q[1]+2.6}H${Q[0]-3.4}Z" fill="var(--red)"/></svg>`;
+  return s;
+}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rnd=mulberry32(7),gauss=()=>Math.sqrt(-2*Math.log(1-rnd()))*Math.cos(2*Math.PI*rnd()),cl=v=>Math.max(11,Math.min(89,v));
+const DS=[];
+for(let i=0;i<30;i++)DS.push({x:cl(36+13*gauss()),y:cl(50+16*gauss()),o:1});
+for(let i=0;i<30;i++)DS.push({x:cl(64+13*gauss()),y:cl(50+16*gauss()),o:0});
+function bound(K){
+  const G=36,c=80/G;
+  let s=so(100,"Ranh giới quyết định của KNN");
+  for(let i=0;i<G;i++)for(let j=0;j<G;j++){
+    const cx=10+(i+.5)*c,cy=10+(j+.5)*c;
+    const nn=DS.map(p=>({o:p.o,d:Math.hypot(p.x-cx,p.y-cy)})).sort((a,b)=>a.d-b.d).slice(0,K);
+    const org=nn.reduce((n,p)=>n+p.o,0)*2>K;
+    s+=`<rect x="${(10+i*c).toFixed(2)}" y="${(10+j*c).toFixed(2)}" width="${(c+.05).toFixed(2)}" height="${(c+.05).toFixed(2)}" fill="var(--${org?"orange":"blue"})" opacity=".25"/>`;
+  }
+  s+=AX;
+  DS.forEach(p=>s+=p.o?`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="1.7" fill="var(--orange)" stroke="var(--panel)" stroke-width=".3"/>`:`<rect x="${(p.x-1.6).toFixed(1)}" y="${(p.y-1.6).toFixed(1)}" width="3.2" height="3.2" fill="var(--blue)" stroke="var(--panel)" stroke-width=".3"/>`);
+  return s+'</svg>';
+}
+function dist(m){
+  let s=so(100,m==="e"?"Khoảng cách Euclidean":"So sánh khoảng cách Euclidean và Manhattan");
+  for(let v=20;v<=80;v+=20)s+=`<path d="M${v} 10V90M10 ${v}H90" stroke="var(--line)" stroke-width=".4"/>`;
+  if(m==="e"){
+    s+='<path d="M20 75H80V25" fill="none" stroke="var(--mute)" stroke-width="1" stroke-dasharray="2 1.6"/><path d="M20 75L80 25" stroke="var(--blue)" stroke-width="1.8"/><path d="M74 75V69H80" fill="none" stroke="var(--mute)" stroke-width=".8"/>';
+    s+='<text x="50" y="82" text-anchor="middle" font-size="3.8" fill="var(--ink)">lệch x</text><text x="82" y="52" font-size="3.8" fill="var(--ink)">lệch y</text><text x="46" y="46" text-anchor="end" font-size="5" font-weight="700" fill="var(--ink)">d</text>';
+  }else{
+    s+='<path d="M20 75L80 25" stroke="var(--blue)" stroke-width="1.8"/><path d="M20 75H80V25" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-dasharray="3 2"/>';
+    s+='<text x="31" y="46" font-size="3.8" fill="var(--ink)">Euclidean</text><text x="50" y="82" text-anchor="middle" font-size="3.8" fill="var(--ink)">Manhattan</text>';
+  }
+  s+='<circle cx="20" cy="75" r="2.6" fill="var(--ink)"/><circle cx="80" cy="25" r="2.6" fill="var(--ink)"/><text x="14" y="82" font-size="4.4" fill="var(--ink)" font-weight="700">A</text><text x="83" y="23" font-size="4.4" fill="var(--ink)" font-weight="700">B</text>';
+  return s+'</svg>';
+}
+function vote(){
+  let s=so(66,"Thanh phiếu bầu: lớp A 3, lớp B 2, lớp C 2");
+  const w=80/7,seg=[[3,"var(--orange)","A: 3"],[2,"var(--blue)","B: 2"],[2,"var(--mute)","C: 2"]];let x=10;
+  seg.forEach(g=>{const ww=g[0]*w;s+=`<rect x="${x.toFixed(2)}" y="16" width="${ww.toFixed(2)}" height="16" fill="${g[1]}" stroke="var(--panel)" stroke-width=".6"/><text x="${(x+ww/2).toFixed(2)}" y="26.4" text-anchor="middle" font-size="4.4" font-weight="700" fill="var(--bg)">${g[2]}</text>`;x+=ww});
+  s+='<path d="M50 11V37" stroke="var(--ink)" stroke-width=".7" stroke-dasharray="1.6 1.2"/><text x="50" y="44" text-anchor="middle" font-size="3.6" fill="var(--mute)">50%</text>';
+  s+='<text x="10" y="58" font-size="4.2" fill="var(--ink)" font-weight="700">Thắng: lớp A (3/7 ≈ 43%)</text>';
+  return s+'</svg>';
+}
+function avg(){
+  let s=so(80,"Ba căn nhà 2,0, 2,2 và 2,4 tỷ, trung bình 2,2 tỷ");
+  [["2,0 tỷ",8],["2,2 tỷ",38],["2,4 tỷ",68]].forEach(h=>s+=`<rect x="${h[1]}" y="10" width="24" height="16" fill="var(--panel)" stroke="var(--ink)" stroke-width=".9"/><text x="${h[1]+12}" y="20.6" text-anchor="middle" font-size="4.6" font-weight="700" fill="var(--ink)">${h[0]}</text>`);
+  s+='<path d="M20 28V40M50 28V40M80 28V40M20 40H80M50 40V46" fill="none" stroke="var(--rule)" stroke-width=".8"/>';
+  s+='<rect x="8" y="48" width="84" height="22" fill="var(--blue)"/><text x="50" y="58" text-anchor="middle" font-size="4" fill="var(--bg)">(2,0 + 2,2 + 2,4) / 3</text><text x="50" y="66.5" text-anchor="middle" font-size="5.4" font-weight="800" fill="var(--bg)">= 2,2 tỷ</text>';
+  return s+'</svg>';
+}
+function wts(){
+  const O="var(--orange)",B="var(--blue)",RF="color-mix(in srgb,var(--red) 16%,var(--panel))";
+  let s=so(118,"Căn nhà có ba loa cùng công suất: loa cam cách 1 m, hai loa xanh cách 4 m. Đếm loa thì xanh thắng, theo độ to nghe thật thì cam thắng");
+  s+=`<rect x="76" y="8" width="7" height="10" fill="${RF}" stroke="var(--red)" stroke-width=".9"/><polygon points="1,24 50,5 99,24" fill="${RF}" stroke="var(--red)" stroke-width=".9" stroke-linejoin="round"/>`;
+  s+='<rect x="5" y="24" width="90" height="54" fill="none" stroke="var(--ink)" stroke-width=".9"/><path d="M2 78H98" stroke="var(--ink)" stroke-width="1.4"/>';
+  s+='<text x="50" y="19.5" text-anchor="middle" font-size="3.4" fill="var(--ink)">3 loa, công suất như nhau</text>';
+  s+=`<path d="M40 50L87 40M40 50L87 60" stroke="${B}" stroke-width=".5" fill="none"/><path d="M40 50L28 50" stroke="${O}" stroke-width="1.8"/>`;
+  const spk=(x,y,c)=>`<rect x="${x-3}" y="${y-4.5}" width="6" height="9" rx="1" fill="${c}"/><circle cx="${x}" cy="${y+1.4}" r="2" fill="var(--panel)" opacity=".9"/><circle cx="${x}" cy="${y-2}" r=".9" fill="var(--panel)"/>`;
+  const arc=(x,y,r,d)=>`<path d="M${(x+d*r*.77).toFixed(1)} ${(y-r*.64).toFixed(1)}A${r} ${r} 0 0 ${d>0?1:0} ${(x+d*r*.77).toFixed(1)} ${(y+r*.64).toFixed(1)}" fill="none" stroke="var(--ink)" stroke-width=".7" opacity=".55" stroke-linecap="round"/>`;
+  [[28,50,O,1],[87,40,B,-1],[87,60,B,-1]].forEach(p=>{s+=spk(p[0],p[1],p[2])+arc(p[0],p[1],5,p[3])+arc(p[0],p[1],7.5,p[3])});
+  s+='<path d="M40 44.8L43.8 51.6H36.2Z" fill="var(--red)"/><text x="40" y="42" text-anchor="middle" font-size="3.4" font-weight="700" fill="var(--red)">bạn</text>';
+  const lb=(x,y,a,d,t)=>`<text x="${x}" y="${y}" text-anchor="${a}" font-size="3.2" fill="var(--mute)">${d}</text><text x="${x}" y="${y+4}" text-anchor="${a}" font-size="3.3" font-weight="700" fill="var(--ink)">${t}</text>`;
+  s+=lb(28,59.5,"middle","cách 1 m","nghe to: 1")+lb(93,29.5,"end","cách 4 m","nghe to: 0,25")+lb(93,69.5,"end","cách 4 m","nghe to: 0,25");
+  const bar=(x,y,w,c,t)=>`<rect x="${x}" y="${y}" width="${w}" height="7" fill="${c}"/>`+(t?`<text x="${x+w/2}" y="${y+4.8}" text-anchor="middle" font-size="3.4" font-weight="700" fill="var(--bg)">${t}</text>`:"");
+  s+='<path d="M5 83H95" stroke="var(--rule)" stroke-width=".5"/>';
+  s+='<text x="5" y="88.5" font-size="3.6" font-weight="700" fill="var(--ink)">Đều nhau: đếm số loa</text><text x="95" y="88.5" text-anchor="end" font-size="3.6" font-weight="800" fill="'+B+'">→ xanh thắng</text>';
+  s+=bar(5,91,24,O,"cam 1")+bar(29,91,48,B,"xanh 1 + 1 = 2");
+  s+='<text x="5" y="105.5" font-size="3.6" font-weight="700" fill="var(--ink)">Theo khoảng cách: độ to thật</text><text x="95" y="105.5" text-anchor="end" font-size="3.6" font-weight="800" fill="'+O+'">→ cam thắng</text>';
+  s+=bar(5,108,24,O,"cam 1")+bar(29,108,12,B,"")+'<text x="44" y="112.8" font-size="3.4" fill="var(--ink)">xanh 0,25 + 0,25 = 0,5</text>';
+  return s+'</svg>';
+}
+function scale(){
+  let s=so(84,"Thang đo tuổi và lương trước và sau chuẩn hóa");
+  s+='<text x="10" y="10" font-size="4.2" font-weight="700" fill="var(--ink)">Trước chuẩn hóa</text>';
+  s+='<rect x="10" y="15" width="16.4" height="9" fill="var(--orange)"/><text x="29" y="21.6" font-size="3.6" fill="var(--ink)">Tuổi: khoảng 40</text>';
+  s+='<rect x="10" y="28" width="80" height="9" fill="var(--blue)"/><text x="12" y="34.2" font-size="3.6" font-weight="700" fill="var(--bg)">Lương: khoảng 195 (lấn át)</text>';
+  s+='<text x="10" y="52" font-size="4.2" font-weight="700" fill="var(--ink)">Sau chuẩn hóa (về khoảng 0 đến 1)</text>';
+  s+='<rect x="10" y="57" width="80" height="9" fill="var(--orange)"/><text x="12" y="63.2" font-size="3.6" font-weight="700" fill="var(--bg)">Tuổi: [0, 1]</text>';
+  s+='<rect x="10" y="70" width="80" height="9" fill="var(--blue)"/><text x="12" y="76.2" font-size="3.6" font-weight="700" fill="var(--bg)">Lương: [0, 1]</text>';
+  return s+'</svg>';
+}
+function cv(){
+  const X=k=>12+(k-1)/24*80,Y=e=>70-e/.25*58,ks=[];for(let k=1;k<=25;k+=2)ks.push(k);
+  const tr=k=>.19*(1-Math.exp(-(k-1)/8)),va=k=>k<7?.10+.0033*(7-k)**2:.10+.0055*(k-7);
+  const pa=f=>"M"+ks.map(k=>X(k).toFixed(1)+" "+Y(f(k)).toFixed(1)).join("L");
+  let s=so(82,"Sai số huấn luyện (cam) và kiểm định (xanh) theo K, K tốt nhất khoảng 7")+'<path d="M12 70H94M12 70V8" stroke="var(--rule)" stroke-width=".4" fill="none"/>';
+  s+=`<path d="${pa(tr)}" fill="none" stroke="var(--orange)" stroke-width="1.3"/><path d="${pa(va)}" fill="none" stroke="var(--blue)" stroke-width="1.3"/>`;
+  s+=`<path d="M${X(7)} 10V70" stroke="var(--red)" stroke-width=".5" stroke-dasharray="2 1.5"/><circle cx="${X(7)}" cy="${Y(va(7)).toFixed(1)}" r="2" fill="var(--red)"/>`;
+  s+=`<text x="${X(7)+2}" y="15" font-size="3.6" font-weight="700" fill="var(--red)">K tốt nhất</text><text x="92" y="19" text-anchor="end" font-size="3.4" fill="var(--blue)">Kiểm định (đề mới)</text><text x="92" y="50" text-anchor="end" font-size="3.4" fill="var(--orange)">Huấn luyện (đề đã biết)</text>`;
+  s+=`<text x="${X(7)+3}" y="${(Y(va(7))+6).toFixed(1)}" font-size="3.8" font-weight="800" fill="var(--red)">10%</text>`;
+  s+='<text x="53" y="78" text-anchor="middle" font-size="3.6" fill="var(--mute)">K (số láng giềng)</text><text transform="translate(5 40) rotate(-90)" text-anchor="middle" font-size="3.6" fill="var(--mute)">Sai số</text>';
+  return s+'</svg>';
+}
+function folds(){
+  const er=[12,9,11,10,8],cw=11,gp=1.2,x0=17,rh=5.8,rs=1.0,y0=13;
+  let s=so(58,"Kiểm định chéo 5 phần: mỗi lần giấu một phần làm đề thi, lấy trung bình sai số 5 lần là 10%");
+  s+='<text x="'+x0+'" y="7" font-size="3.1" font-weight="800" fill="var(--ink)">Dữ liệu chia 5 phần</text><text x="97" y="7" text-anchor="end" font-size="3.1" font-weight="800" fill="var(--ink)">Đoán sai ở phần thi</text>';
+  er.forEach((e,i)=>{
+    const y=y0+i*(rh+rs);
+    s+=`<text x="3" y="${(y+rh/2+1.3).toFixed(1)}" font-size="3.3" fill="var(--mute)">Lần ${i+1}</text>`;
+    for(let j=0;j<5;j++){
+      const t=j===i,x=x0+j*(cw+gp);
+      s+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${cw}" height="${rh}" rx="1.2" fill="${t?"var(--blue)":"color-mix(in srgb,var(--orange) 36%,var(--panel))"}"/><text x="${(x+cw/2).toFixed(1)}" y="${(y+rh/2+1.2).toFixed(1)}" text-anchor="middle" font-size="3.3" font-weight="700" fill="${t?"var(--bg)":"var(--ink)"}">${t?"thi":"học"}</text>`;
+    }
+    s+=`<text x="97" y="${(y+rh/2+1.6).toFixed(1)}" text-anchor="end" font-size="4.2" font-weight="800" fill="var(--blue)">${e}%</text>`;
+  });
+  s+='<path d="M'+x0+' 48H97" stroke="var(--rule)" stroke-width=".7"/>';
+  s+='<text x="'+x0+'" y="54.2" font-size="2.9" fill="var(--ink)">Trung bình 5 lần = 1 điểm trên đường xanh</text><text x="97" y="55" text-anchor="end" font-size="5.2" font-weight="800" fill="var(--blue)">10%</text>';
+  return s+'</svg>';
+}
+const FC={m:"#F2B705",o:"var(--orange)",a:"#43A047"};
+function fruit(){
+  const X=w=>12+(w-60)/180*82,Y=s=>90-s*8;
+  const Q=[[75,4],[82,5],[95,5],[88,6],[74,6],[100,7]],C=[[189,8],[201,8],[214,8],[208,7],[226,7],[180,4]],T=[[182,2],[200,1],[168,2],[190,3],[210,2],[197,6]];
+  let s=so(108,"Biểu đồ cân nặng và độ sần vỏ của cam, quýt, táo")+'<path d="M12 90H94M12 90V8" stroke="var(--rule)" stroke-width=".4" fill="none"/>';
+  [100,150,200].forEach(w=>s+=`<path d="M${X(w)} 90v1.6" stroke="var(--rule)" stroke-width=".4"/><text x="${X(w)}" y="95" text-anchor="middle" font-size="3.2" fill="var(--mute)">${w}</text>`);
+  [0,5,10].forEach(v=>s+=`<text x="10" y="${Y(v)+1.1}" text-anchor="end" font-size="3.2" fill="var(--mute)">${v}</text>`);
+  s+='<text x="53" y="102" text-anchor="middle" font-size="3.4" fill="var(--mute)">Cân nặng (g)</text><text transform="translate(3.6 49) rotate(-90)" text-anchor="middle" font-size="3.4" fill="var(--mute)">Độ sần vỏ</text>';
+  Q.forEach(p=>{const x=X(p[0]),y=Y(p[1]);s+=`<path d="M${x} ${y-2.8}L${x+2.8} ${y}L${x} ${y+2.8}L${x-2.8} ${y}Z" fill="${FC.m}" stroke="var(--ink)" stroke-width=".35"/>`});
+  C.forEach(p=>s+=`<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1])}" r="2.3" fill="${FC.o}" stroke="var(--ink)" stroke-width=".35"/>`);
+  T.forEach(p=>s+=`<rect x="${(X(p[0])-2.1).toFixed(1)}" y="${Y(p[1])-2.1}" width="4.2" height="4.2" fill="${FC.a}" stroke="var(--ink)" stroke-width=".35"/>`);
+  const x=X(195),y=Y(7);
+  s+=`<path d="M${x.toFixed(1)} ${y-4.6}L${(x+4).toFixed(1)} ${y+3.4}H${(x-4).toFixed(1)}Z" fill="var(--panel)" fill-opacity=".55" stroke="var(--red)" stroke-width="1.3" stroke-linejoin="round"/>`;
+  s+=`<text x="${(x-7).toFixed(1)}" y="${(y+1.5).toFixed(1)}" text-anchor="end" font-size="3.4" font-weight="700" fill="var(--red)">quả cần đoán</text>`;
+  return s+'</svg>';
+}
+function pipe(){
+  let s=so(115,"Sơ đồ ba bước của KNN: quả mới, tính khoảng cách, chọn K gần nhất, bỏ phiếu giữa quýt, cam và táo");
+  const B=[[3,19,"var(--mute)","Quả mới cần đoán","195 g · độ sần vỏ 7"],[29,19,"var(--orange)","Bước 1: tính khoảng cách","từ quả mới tới cả 18 quả đã biết"],[55,19,"var(--blue)","Bước 2: chọn K gần nhất","xếp từ gần đến xa, lấy K quả đầu"],[81,30,"var(--red)","Bước 3: bỏ phiếu","loại nhiều phiếu nhất thắng"]];
+  B.forEach((o,i)=>{
+    const y=o[0],h=o[1];
+    s+=`<rect x="12" y="${y}" width="76" height="${h}" rx="2.5" fill="var(--panel)" stroke="var(--line)" stroke-width=".6"/><rect x="12" y="${y}" width="2" height="${h}" fill="${o[2]}"/>`;
+    s+=`<text x="19" y="${y+8}" font-size="4.4" font-weight="700" fill="var(--ink)">${o[3]}</text><text x="19" y="${y+14.2}" font-size="3.3" fill="var(--mute)">${o[4]}</text>`;
+    if(i<3){const e=y+h;s+=`<path d="M50 ${e+.8}V${e+4.8}" stroke="var(--mute)" stroke-width=".8" fill="none"/><path d="M48.3 ${e+3.8}L50 ${e+6.4}L51.7 ${e+3.8}Z" fill="var(--mute)"/>`}
+  });
+  s+='<path d="M78 7.6L82 14.4H74Z" fill="var(--red)"/>';
+  const cy=101.2,st='stroke="var(--ink)" stroke-width=".45"';
+  s+=`<path d="M28 ${cy-3.9}L${28+3.9} ${cy}L28 ${cy+3.9}L${28-3.9} ${cy}Z" fill="${FC.m}" ${st}/>`;
+  s+=`<circle cx="50" cy="${cy}" r="3.4" fill="${FC.o}" ${st}/>`;
+  s+=`<rect x="69" y="${cy-3.1}" width="6.2" height="6.2" fill="${FC.a}" ${st}/>`;
+  [[28,"quýt"],[50,"cam"],[72.1,"táo"]].forEach(l=>s+=`<text x="${l[0]}" y="107.8" text-anchor="middle" font-size="3.5" fill="var(--ink)">${l[1]}</text>`);
+  return s+'</svg>';
+}
+const L3='<div class="leg"><span><i style="color:var(--orange)">●</i> Cam</span><span><i style="color:#F2B705">◆</i> Quýt</span><span><i style="color:#43A047">■</i> Táo</span><span><i style="color:var(--red)">▲</i> Quả cần đoán</span></div>';
+const FG={d:()=>dist("m"),e:()=>dist("e"),b:f=>bound(f.K),v:vote,a:avg,w:wts,s:scale,cv:cv,fd:folds,fr:fruit,pl:pipe};
+const figHTML=f=>`<div class="fig">${FG[f.t]?FG[f.t](f):plot(f.K)}<p>${f.c}</p></div>`;
+/* ---- dựng slide ---- */
+const deck=document.getElementById("deck");
+S.forEach((d,i)=>{
+  const e=document.createElement("section");
+  e.className="slide"+(d.lay==="steps"||d.lay==="map"||d.lay==="py"||d.lay==="toc"?" col":d.lay==="play"?" pl":d.lay==="cv2"?" cv2":"");
+  e.setAttribute("aria-label","Slide "+(i+1));
+  const lis=d.b?d.b.map(x=>"<li>"+x+"</li>").join(""):"";
+  if(d.lay==="team"){
+    e.innerHTML=`<div class="tl"><div class="tlf"><small>Môn học</small><b>${d.course}</b></div><div class="tlf"><small>Đề tài</small><b>${d.sub}</b></div><div class="tlf"><small>Giảng viên hướng dẫn</small><b>${d.teacher}</b></div><p class="go">Bấm → hoặc Space để bắt đầu</p></div><div class="tp"><div class="tph"><h2>${d.t}</h2><span>${d.b.length} thành viên</span></div><div class="tpc"><span>STT</span><span>Họ và tên</span><span>MSSV</span></div>${d.b.map((x,j)=>`<div class="tpr"><i>${j+1}</i><b>${x[0]}</b><span>${x[1]}</span></div>`).join("")}</div>`;
+  }else if(d.lay==="toc"){
+    e.innerHTML=`<h2>${d.t}</h2><div class="tcg">${d.parts.map(q=>`<div class="tcc" style="--ac:${q.c}"><small>${q.k}</small><h3>${q.t}</h3>${q.i.map((x,j)=>`<div class="ti"><i>${q.n}.${j+1}</i><span>${x}</span></div>`).join("")}</div>`).join("")}</div>${d.note?`<p class="note">${d.note}</p>`:""}`;
+  }else if(d.k){
+    e.innerHTML=`<div class="txt"><h1>${d.t}</h1><p class="sub">${d.s}</p>${d.ml?`<div class="ml">${d.ml}</div>`:""}</div><div class="figs hero"><div class="fig"><svg id="hero" viewBox="0 0 100 100" role="img" aria-label="Điểm mới di chuyển, KNN chọn 3 láng giềng gần nhất"></svg><p>Điểm mới di chuyển. KNN (K = 3) chọn 3 láng giềng gần nhất rồi bỏ phiếu: màu của điểm mới là nhãn dự đoán.</p></div></div>`;
+  }else if(d.lay==="rows"){
+    e.innerHTML=`<div class="head"><h2>${d.t}</h2>${d.sub?`<p class="note">${d.sub}</p>`:""}</div><div class="rows" style="--ac:${d.ac||"var(--blue)"}">${d.b.map(x=>`<div class="rw">${d.ico?`<span class="gl">${d.ico}</span>`:""}<div>${x}</div></div>`).join("")}</div>`;
+  }else if(d.lay==="cvl"){
+    e.innerHTML=`<div class="txt cvt"><h2>${d.t}</h2><div class="defs">${d.defs.map(x=>`<div class="df" style="--ac:${x[0]}"><b>${x[1]}</b><span>${x[2]}</span></div>`).join("")}</div><ul class="cvb">${d.b.map(x=>"<li>"+x+"</li>").join("")}</ul><p class="note">${d.ex}</p></div><div class="figs cvf"><div class="row">${d.fs.map(figHTML).join("")}</div></div>`;
+  }else if(d.lay==="cv2"){
+    e.innerHTML=`<h2>${d.t}</h2><div class="cv2row"><div class="cv2a">${figHTML(d.fs[0])}</div><div class="cv2b">${figHTML(d.fs[1])}</div></div><ul class="cv2li">${d.b.map(x=>"<li>"+x+"</li>").join("")}</ul>`;
+  }else if(d.lay==="steps"){
+    const col=["var(--orange)","var(--blue)","var(--red)"];
+    e.innerHTML=`<h2>${d.t}</h2><div class="steps${d.plain?" plain":""}">${d.b.map((x,j)=>`<div class="stp" style="--ac:${col[j%3]}"><div class="nd">${j+1}</div><b>${x[0]}</b>${x[1]?`<span>${x[1]}</span>`:""}</div>`).join("")}</div>${d.note?`<p class="note">${d.note}</p>`:""}`;
+  }else if(d.lay==="map"){
+    e.innerHTML=`<h2>${d.t}</h2><div class="map">${d.b.map(x=>`<div class="mrow"><div class="chip a">${x[0]}</div><i>→</i><div class="chip b">${x[1]}</div></div>`).join("")}</div>${d.note?`<p class="note">${d.note}</p>`:""}`;
+  }else if(d.lay==="py"){
+    e.innerHTML=`<h2>${d.t}</h2><div class="pyg"><div class="cell cd"><div class="lb">Ô 1 · Code Python (chạy bằng bản JavaScript tương đương)</div><textarea id="pycode" spellcheck="false" readonly># Mỗi quả: (cân nặng g, độ sần 1-10, loại)
+các_quả = [
+    (75, 4, "quýt"), (82, 5, "quýt"), (95, 5, "quýt"),
+    (88, 6, "quýt"), (74, 6, "quýt"), (100, 7, "quýt"),
+    (189, 8, "cam"), (201, 8, "cam"), (214, 8, "cam"),
+    (208, 7, "cam"), (226, 7, "cam"), (180, 4, "cam"),
+    (182, 2, "táo"), (200, 1, "táo"), (168, 2, "táo"),
+    (190, 3, "táo"), (210, 2, "táo"), (197, 6, "táo"),
+]
+quả_mới = (195, 7)   # quả cần đoán (lấy từ ô nhập)
+K = 3                # số láng giềng (lấy từ ô nhập)
+
+# Bước 1: tính khoảng cách từ quả mới tới từng quả
+khoảng_cách = []
+for cân_nặng, độ_sần, loại in các_quả:
+    d = ((cân_nặng - quả_mới[0]) ** 2 + (độ_sần - quả_mới[1]) ** 2) ** 0.5
+    khoảng_cách.append((round(d, 1), loại))
+
+# Bước 2: xếp từ gần đến xa, lấy K quả đầu
+khoảng_cách.sort()
+gần_nhất = khoảng_cách[:K]
+print(gần_nhất)
+
+# Bước 3: loại nào xuất hiện nhiều nhất thì thắng
+các_loại = [loại for d, loại in gần_nhất]
+print("Dự đoán:", max(các_loại, key=các_loại.count))</textarea></div><div class="cell dt"><div class="lb">Ô 2 · Dữ liệu đầu vào</div><div class="fld"><label>Cân nặng (g)<input id="f1" type="number" step="5" value="195"></label><label>Độ sần vỏ (1-10)<input id="f2" type="number" step="1" value="7"></label><label>K<input id="kk" type="number" min="1" max="18" step="1" value="3"></label></div><div class="lb" style="text-transform:none;letter-spacing:0;font-weight:400">Thử K = 1 rồi K = 3 với quả 195 g, độ sần 7.</div><button class="runb" id="pyrun">Chạy code</button></div><div class="cell ot"><div class="lb">Ô 3 · Kết quả</div><pre id="pyout">Bấm Chạy code để xem kết quả.</pre></div></div>`;
+  }else if(d.lay==="bnd"){
+    e.innerHTML=`<div class="txt"><h2>${d.t}</h2><ul>${lis}</ul></div><div class="figs play"><div class="fig bnd"></div>${L2}<div class="ctl"><label for="bk">K =</label><b class="bkv">1</b><input class="bk" id="bk" type="range" min="1" max="25" step="2" value="1"></div></div>`;
+  }else if(d.lay==="play"){
+    e.innerHTML=`<h2>${d.t}</h2><div class="figs play"><div class="fig"><svg class="pgsvg" viewBox="0 0 100 100" role="img" aria-label="Vùng tương tác: kéo tam giác để đổi vị trí điểm mới"></svg><p class="pgtxt"></p></div><div class="ctl"><label for="pk">K =</label><b class="pkv">3</b><input class="pk" id="pk" type="range" min="1" max="25" step="2" value="3"></div></div>`;
+  }else{
+    let h=`<div class="txt"><h2>${d.t}</h2><ul>${lis}</ul></div>`;
+    if(d.fs)h+=`<div class="figs${d.fs.length>1?" two":""}"><div class="row">${d.fs.map(figHTML).join("")}</div>${d.leg===1?L1:d.leg===2?L2:d.leg===3?L3:""}</div>`;
+    if(d.tb)h+=`<div class="tbl"><table><thead><tr>${d.tb.h.map(x=>"<th>"+x+"</th>").join("")}</tr></thead><tbody>${d.tb.r.map((r,j)=>`<tr${j<(d.tb.hl||0)?' class="hl"':""}>`+r.map(x=>"<td>"+x+"</td>").join("")+"</tr>").join("")}</tbody></table>${d.tb.c?`<p>${d.tb.c}</p>`:""}</div>`;
+    if(d.code)h+=`<pre class="code">${d.code}</pre>`;
+    e.innerHTML=h;
+  }
+  e.style.setProperty("--sc",PC[d.p]);if(!d.k)e.insertAdjacentHTML("beforeend",`<span class="eb">${d.p}</span>`);
+  deck.appendChild(e);
+});
+document.querySelectorAll("pre.code").forEach(p=>{p.innerHTML=p.innerHTML.replace(/\b(from|import)\b|\b([A-Za-z_]\w*)(?=\()|\b(\d+)\b/g,(m,k,f)=>`<i class="${k?"k":f?"f":"n"}">${m}</i>`)});
+const sl=[...document.querySelectorAll(".slide")];let cur=0;
+const reduce=matchMedia("(prefers-reduced-motion:reduce)").matches;
+/* ---- hero động ---- */
+(function(){
+  const svg=document.getElementById("hero");
+  let s='<line/><line/><line/>';
+  DS.forEach(p=>s+=p.o?`<circle class="pt" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.1" fill="var(--orange)"/>`:`<rect class="pt" x="${(p.x-2).toFixed(1)}" y="${(p.y-2).toFixed(1)}" width="4" height="4" fill="var(--blue)"/>`);
+  s+='<path d="M0 -5L4.8 3.6H-4.8Z" stroke="var(--ink)" stroke-width="1"/>';
+  svg.innerHTML=s;
+  const ln=[...svg.querySelectorAll("line")],pt=[...svg.querySelectorAll(".pt")],tri=svg.querySelector("path");
+  ln.forEach(l=>{l.setAttribute("stroke","var(--red)");l.setAttribute("stroke-width",".5")});
+  function frame(t){
+    const x=50+27*Math.sin(t/2600),y=50+22*Math.sin(t/1800+1.3);
+    const nn=DS.map((p,i)=>({i,o:p.o,d:Math.hypot(p.x-x,p.y-y)})).sort((a,b)=>a.d-b.d).slice(0,3);
+    pt.forEach(p=>p.classList.remove("nb"));
+    nn.forEach((p,j)=>{pt[p.i].classList.add("nb");ln[j].setAttribute("x1",x);ln[j].setAttribute("y1",y);ln[j].setAttribute("x2",DS[p.i].x);ln[j].setAttribute("y2",DS[p.i].y)});
+    tri.setAttribute("transform",`translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+    tri.setAttribute("fill",nn.reduce((n,p)=>n+p.o,0)>=2?"var(--orange)":"var(--blue)");
+  }
+  if(reduce)frame(4200);else requestAnimationFrame(function loop(t){if(cur===2&&!document.hidden)frame(t);requestAnimationFrame(loop)});
+})();
+/* ---- slide tương tác ---- */
+(function(){
+  const pl=document.querySelector(".play");if(!pl)return;
+  const svg=pl.querySelector(".pgsvg"),txt=pl.querySelector(".pgtxt"),rg=pl.querySelector(".pk"),kv=pl.querySelector(".pkv");
+  let q=[50,50],K=3,drag=false;
+  function draw(){
+    const P=DS.map(p=>({x:p.x,y:p.y,o:p.o,d:Math.hypot(p.x-q[0],p.y-q[1])})).sort((a,b)=>a.d-b.d);
+    const nn=P.slice(0,K),no=nn.reduce((n,p)=>n+p.o,0),nb=K-no,R=(P[K-1].d+P[K].d)/2,set=new Set(nn);
+    let s=AX+`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="${R.toFixed(1)}" fill="none" stroke="var(--red)" stroke-width=".7" stroke-dasharray="2 1.5"/>`;
+    nn.forEach(p=>s+=`<line x1="${q[0].toFixed(1)}" y1="${q[1].toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="var(--red)" stroke-width=".4" opacity=".6"/>`);
+    P.forEach(p=>{const st=set.has(p)?' stroke="var(--ink)" stroke-width=".9"':'';
+      s+=p.o?`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="1.9" fill="var(--orange)"${st}/>`:`<rect x="${(p.x-1.8).toFixed(1)}" y="${(p.y-1.8).toFixed(1)}" width="3.6" height="3.6" fill="var(--blue)"${st}/>`});
+    s+=`<path d="M${q[0].toFixed(1)} ${(q[1]-4.4).toFixed(1)}L${(q[0]+4.2).toFixed(1)} ${(q[1]+3.2).toFixed(1)}H${(q[0]-4.2).toFixed(1)}Z" fill="var(--${no>nb?"orange":"blue"})" stroke="var(--ink)" stroke-width="1"/>`;
+    svg.innerHTML=s;
+    txt.innerHTML=`K = ${K}: ${no} cam, ${nb} xanh, dự đoán <b>${no>nb?"cam":"xanh"}</b>`;
+  }
+  const mv=e=>{const r=svg.getBoundingClientRect();q=[Math.max(12,Math.min(88,(e.clientX-r.left)/r.width*100)),Math.max(12,Math.min(86,(e.clientY-r.top)/r.height*100))];draw()};
+  svg.addEventListener("pointerdown",e=>{drag=true;svg.setPointerCapture(e.pointerId);mv(e)});
+  svg.addEventListener("pointermove",e=>{if(drag)mv(e)});
+  svg.addEventListener("pointerup",()=>drag=false);
+  svg.addEventListener("pointercancel",()=>drag=false);
+  rg.addEventListener("input",()=>{K=+rg.value;kv.textContent=K;draw()});
+  rg.addEventListener("pointerup",()=>rg.blur());
+  draw();
+})();
+/* ---- ranh giới theo K ---- */
+(function(){
+  const b=document.querySelector(".bnd");if(!b)return;
+  const rg=document.querySelector(".bk"),kv=document.querySelector(".bkv");
+  const cap=K=>K<=3?"K = "+K+": ranh giới quá phức tạp: overfitting":K>=17?"K = "+K+": ranh giới quá trơn: underfitting":"K = "+K+": ranh giới cân bằng hơn";
+  function dr(){const K=+rg.value;kv.textContent=K;b.innerHTML=bound(K)+`<p>${cap(K)}</p>`}
+  rg.addEventListener("input",dr);rg.addEventListener("pointerup",()=>rg.blur());dr();
+})();
+/* ---- trục điều hướng ---- */
+const axis=document.getElementById("axis");
+S.forEach((d,i)=>{
+  const b=document.createElement("button");
+  b.className="tk";b.style.setProperty("--c",PC[d.p]);
+  b.setAttribute("aria-label","Slide "+(i+1)+": "+d.t);
+  b.onclick=()=>go(i);axis.appendChild(b);
+});
+const tks=[...axis.children];
+function go(n){
+  cur=Math.max(0,Math.min(sl.length-1,n));
+  sl.forEach((e,i)=>e.classList.toggle("on",i===cur));
+  tks.forEach((t,i)=>{t.classList.toggle("past",i<cur);t.classList.toggle("cur",i===cur)});
+  document.getElementById("pn").textContent=S[cur].p.split(":")[0];
+  document.getElementById("num").textContent=(cur+1)+" / "+sl.length;
+  document.body.style.setProperty("--p",cur/(sl.length-1));
+  try{history.replaceState(null,"","#s"+(cur+1))}catch(e){}
+}
+document.getElementById("prev").onclick=()=>go(cur-1);
+document.getElementById("next").onclick=()=>go(cur+1);
+const themes=[null,"light","dark"];let ti=0;
+addEventListener("keydown",e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if(/^(INPUT|TEXTAREA)$/.test(e.target.tagName))return;
+  const onBtn=e.target.closest&&e.target.closest("button");
+  if(e.key==="ArrowRight"||e.key==="PageDown"||(e.key===" "&&!onBtn)){e.preventDefault();go(cur+1)}
+  else if(e.key==="ArrowLeft"||e.key==="PageUp"||e.key==="Backspace"){e.preventDefault();go(cur-1)}
+  else if(e.key==="Home")go(0);
+  else if(e.key==="End")go(sl.length-1);
+  else if(e.key==="t"||e.key==="T"){ti=(ti+1)%3;const r=document.documentElement;themes[ti]?r.setAttribute("data-theme",themes[ti]):r.removeAttribute("data-theme")}
+});
+let tx=null;
+addEventListener("touchstart",e=>{tx=e.target.closest&&e.target.closest(".play,.axis,.ctl,.pyg")?null:e.touches[0].clientX});
+addEventListener("touchend",e=>{if(tx===null)return;const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>60)go(cur+(d<0?1:-1));tx=null});
+
+
+/* ---- bản JavaScript tương đương đoạn Python ở Ô 1 ---- */
+(function(){
+  const btn=document.getElementById("pyrun");if(!btn)return;
+  const code=document.getElementById("pycode");
+  const sync=()=>{
+    const g=id=>document.getElementById(id).value.trim()||"?";
+    code.value=code.value.replace(/(quả_mới = )\([^)]*\)/,"$1("+g("f1")+", "+g("f2")+")").replace(/^(K = )\S+/m,"$1"+g("kk"));
+  };
+  ["f1","f2","kk"].forEach(id=>document.getElementById(id).addEventListener("input",sync));
+  sync();
+  const F=[[75,4,"quýt"],[82,5,"quýt"],[95,5,"quýt"],[88,6,"quýt"],[74,6,"quýt"],[100,7,"quýt"],[189,8,"cam"],[201,8,"cam"],[214,8,"cam"],[208,7,"cam"],[226,7,"cam"],[180,4,"cam"],[182,2,"táo"],[200,1,"táo"],[168,2,"táo"],[190,3,"táo"],[210,2,"táo"],[197,6,"táo"]];
+  const rnd1=x=>{const s=x*10,f=Math.floor(s);return s-f===.5?(f%2===0?f:f+1)/10:Number(x.toFixed(1))};
+  const f1=x=>{const r=rnd1(x);return Number.isInteger(r)?r.toFixed(1):String(r)};
+  btn.addEventListener("click",()=>{
+    const out=document.getElementById("pyout"),v=id=>document.getElementById(id).value;
+    const q=[+v("f1"),+v("f2")],K=Math.trunc(+v("kk"));
+    if(!isFinite(q[0])||!isFinite(q[1])||v("f1")===""||v("f2")===""){out.textContent="Dữ liệu chưa hợp lệ: cân nặng và độ sần phải là số";return}
+    if(!(K>=1&&K<=F.length)){out.textContent="Dữ liệu chưa hợp lệ: K phải từ 1 đến "+F.length+" (chỉ có "+F.length+" mẫu)";return}
+    const d=F.map(r=>{const dx=r[0]-q[0],dy=r[1]-q[1];return[rnd1(Math.sqrt(dx*dx+dy*dy)),r[2]]});
+    d.sort((a,b)=>a[0]-b[0]||(a[1]<b[1]?-1:a[1]>b[1]?1:0));
+    const nn=d.slice(0,K),kinds=nn.map(o=>o[1]),cnt=k=>kinds.filter(x=>x===k).length;
+    let pred=kinds[0];kinds.forEach(k=>{if(cnt(k)>cnt(pred))pred=k});
+    out.textContent="["+nn.map(o=>"("+f1(o[0])+", '"+o[1]+"')").join(", ")+"]\nDự đoán: "+pred;
+    btn.blur();
+  });
+})();
+const m=/^#s(\d+)$/.exec(location.hash);go(m?+m[1]-1:0);
+</script>
+
+</body></html>
